@@ -59,7 +59,7 @@ CaeUnsCBAero::beginExport()
     //model_.getAttribute("debugDump", doDump);
     //model_.getAttribute("quality", quality_);
     setProgressMajorSteps(5); // Xs, Ys, Zs, Tris, Flags
-    return true;
+    return model_.appendEnumElementOrder(PWGM_ELEMORDER_VC);
 }
 
 PWP_BOOL
@@ -124,30 +124,63 @@ CaeUnsCBAero::writeNodeXYZs(const PWGM_ENUM_XYZ which)
     return progressEndStep() && ret;
 }
 
+
+static const char ElemCntFmt[] = "%-10.10lu\n";
+
 bool
 CaeUnsCBAero::writeTris()
 {
     //Tri_1_NodeNdx1 Tri_1_NodeNdx2 Tri_1_NodeNdx3
     //   ...
     //Tri_NumTris_NodeNdx1 Tri_NumTris_NodeNdx2 Tri_NumTris_NodeNdx3
-    bool ret = progressBeginStep(model_.elementCount());
+    PwpFile fTaglist;
+    PwpFile fTag;
+    bool ret = progressBeginStep(model_.elementCount()) &&
+        fTaglist.open(mkFileName(".Aero.taglist"), pwpWrite | pwpAscii);
     if (ret) {
-        PWGM_ELEMDATA ed;
+        CaeUnsEnumElementData ed;
+        CaeCondition cond;
+        std::string condName;
+        PWP_UINT32 blkId = PWP_UINT32_MAX;
+        PWP_UINT32 vcElemCnt = 0; // running elem cnt for current cond
         CaeUnsElement elem(model_);
         while (elem.isValid()) {
             if (!elem.data(ed)) {
                 ret = false;
                 break;
             }
-            if (!rtFile_.write(ed.index[0], " ")) {
+            // Are we encountering a new VC?
+            if (ed.blockId() != blkId) {
+                // new block, so cond may have changed
+                blkId = ed.blockId();
+                if (!CaeUnsBlock(model_, blkId).condition(cond)) {
+                    ret = false;
+                    break;
+                }
+                else if (condName != cond.name()) {
+                    // new cond!
+                    condName = cond.name();
+                    if (!startCond(fTaglist, fTag, vcElemCnt, cond)) {
+                        ret = false;
+                        break;
+                    }
+                }
+            }
+            ++vcElemCnt;
+            // 1-based element index
+            if (!fTag.writef("%lu\n", (unsigned long)elem.index() + 1)) {
                 ret = false;
                 break;
             }
-            if (!rtFile_.write(ed.index[1], " ")) {
+            if (!rtFile_.write(ed.indexAt(0), " ")) {
                 ret = false;
                 break;
             }
-            if (!rtFile_.write(ed.index[2], "\n")) {
+            if (!rtFile_.write(ed.indexAt(1), " ")) {
+                ret = false;
+                break;
+            }
+            if (!rtFile_.write(ed.indexAt(2), "\n")) {
                 ret = false;
                 break;
             }
@@ -157,6 +190,7 @@ CaeUnsCBAero::writeTris()
             }
             ++elem;
         }
+        fTaglist.close();
     }
     return progressEndStep() && ret;
 }
@@ -173,7 +207,7 @@ CaeUnsCBAero::writeFlags()
         const PWP_UINT32 flag0 = 1;
         const PWP_UINT32 flag1 = 1;
         for (PWP_UINT32 ii = 0; ii < elemCnt; ++ii) {
-            if (!rtFile_.write(flag0, " ")) {
+            if (!rtFile_.write(flag0), " ") {
                 ret = false;
                 break;
             }
@@ -188,6 +222,54 @@ CaeUnsCBAero::writeFlags()
         }
     }
     return progressEndStep() && ret;
+}
+
+bool
+CaeUnsCBAero::startCond(PwpFile &fTaglist, PwpFile &fTag, PWP_UINT32 &elemCnt,
+    const CaeCondition &cond)
+{
+    bool ret = true;
+    if (fTag.isOpen()) {
+        // strip filename from path sans extension
+        std::string tagNm(fTag.getName());
+        size_t pos = tagNm.find_last_of("/\\");
+        if (std::string::npos != pos) {
+            tagNm.erase(0, pos);
+        }
+        pos = tagNm.find_last_of(".");
+        if (std::string::npos != pos) {
+            tagNm.erase(pos);
+        }
+        // write actual elem count value AND write tag entry to taglist
+        ret = fTag.rewind() &&
+            fTag.writef(ElemCntFmt, (unsigned long)elemCnt) &&
+            fTag.close() &&
+            fTaglist.writef("%lu %s\n", (unsigned long)elemCnt, tagNm.c_str());
+    }
+    elemCnt = 0; // reset for next tag group
+
+    if (ret) {
+        // open new tag file
+        std::string ext(".Aero_");
+        ext += cond.name();
+        // open tag file AND write elem count placeholder value
+        ret = fTag.open(mkFileName(ext), pwpWrite | pwpAscii) &&
+            fTag.writef(ElemCntFmt, (unsigned long)elemCnt);
+    }
+    return ret;
+}
+
+std::string
+CaeUnsCBAero::mkFileName(const std::string &ext)
+{
+    if (baseFilename_.empty()) {
+        baseFilename_ = exportDestination();
+        const size_t pos = baseFilename_.rfind('.');
+        if (std::string::npos != pos) {
+            baseFilename_.erase(pos);
+        }
+    }
+    return baseFilename_ + ext;
 }
 
 bool

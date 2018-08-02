@@ -44,13 +44,17 @@ private:
     virtual PWP_UINT32 streamFace(const PWGM_FACESTREAM_DATA &data);
     virtual PWP_UINT32 streamEnd(const PWGM_ENDSTREAM_DATA &data);
 
-    bool    writeHeader();
-    bool    writeNodes();
-    bool    writeNodeXYZs(const PWGM_ENUM_XYZ which);
-    bool    writeTris();
-    bool    writeFlags();
+    bool        writeHeader();
+    bool        writeNodes();
+    bool        writeNodeXYZs(const PWGM_ENUM_XYZ which);
+    bool        writeTris();
+    bool        writeFlags();
+    bool        startCond(PwpFile &fTaglist, PwpFile &fTag,
+                    PWP_UINT32 &elemCnt, const CaeCondition &cond);
+    std::string mkFileName(const std::string &ext);
 
 private:
+    std::string baseFilename_;
 };
 
 #endif // _CAEUNSCBAERO_H_
