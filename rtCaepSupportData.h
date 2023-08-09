@@ -11,25 +11,24 @@
 #ifndef _RTCAEPSUPPORTDATA_H_
 #define _RTCAEPSUPPORTDATA_H_
 
-/*! \cond */
-
 /*------------------------------------*/
 /* CaeUnsCBAero format item setup data */
 /*------------------------------------*/
-CAEP_BCINFO CaeUnsCBAeroBCInfo[] = {
-    { "inflow-CaeUnsCBAero", 100 },
-    { "outflow-CaeUnsCBAero", 101 },
-    { "wall-CaeUnsCBAero", 102 },
-};
+//CAEP_BCINFO CaeUnsCBAeroBCInfo[] = {
+//    { "inflow-CaeUnsCBAero", 100 },
+//    { "outflow-CaeUnsCBAero", 101 },
+//    { "wall-CaeUnsCBAero", 102 },
+//};
+
 /*------------------------------------*/
-CAEP_VCINFO CaeUnsCBAeroVCInfo[] = {
-    { "viscous-CaeUnsCBAero", 200 },
-    { "invisid-CaeUnsCBAero", 201 },
-};
+//CAEP_VCINFO CaeUnsCBAeroVCInfo[] = {
+//    { "viscous-CaeUnsCBAero", 200 },
+//    { "invisid-CaeUnsCBAero", 201 },
+//};
+
 /*------------------------------------*/
 const char *CaeUnsCBAeroFileExt[] = {
     "msh"
 };
-/*! \endcond */
 
 #endif /* _RTCAEPSUPPORTDATA_H_ */
