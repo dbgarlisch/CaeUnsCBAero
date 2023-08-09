@@ -207,7 +207,7 @@ CaeUnsCBAero::writeFlags()
         const PWP_UINT32 flag0 = 1;
         const PWP_UINT32 flag1 = 1;
         for (PWP_UINT32 ii = 0; ii < elemCnt; ++ii) {
-            if (!rtFile_.write(flag0), " ") {
+            if (!rtFile_.write(flag0, " ")) {
                 ret = false;
                 break;
             }
