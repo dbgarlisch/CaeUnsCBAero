@@ -86,7 +86,7 @@
     // if you added any custom data in rtCaepInstanceData.h,
     // you need to initialize it here. The init below matches the 
     // example MY_CAEP_DATA struct given in rtCaepInstanceData.h
-    
+    /*
     {   0,
         0,
         0.0,
